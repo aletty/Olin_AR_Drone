@@ -22,7 +22,6 @@
 	</node>
 	
 	<!-- Launches the joystick controller -->
-	<node name="script_test" pkg="ardrone_tutorials" type="script_test.py" output="screen" required="true">
+	<node name="script_test" pkg="ardrone_tutorials" type="script_test.py" output="screen" required="true" />
 
-	</node>
 </launch>
