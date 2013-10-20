@@ -26,6 +26,7 @@ from PySide import QtCore, QtGui
 
 #OpenCV 
 import cv2, cv_bridge
+import multitracker
 
 
 # Some Constants
@@ -120,7 +121,7 @@ class DroneVideoDisplay(QtGui.QMainWindow):
 				self.imageLock.release()
 
 			# OpenCV
-			# cvImage = cv_bridge.CvBridge.imgmsg_to_cv(self.image, desired_encoding="passthrough")
+			cvImage = cv_bridge.CvBridge.imgmsg_to_cv(self.image, desired_encoding="passthrough")
 
 			#display window 
 			self.resize(image.width(),image.height())
