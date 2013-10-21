@@ -3,8 +3,9 @@
 # ROS libraries
 import roslib; roslib.load_manifest('ardrone_vision')
 import rospy
-from std_msgs.msg import Empty as msgEmpty         # for land/takeoff/emergency
+from sensor_msgs.msg import Image
 
+# Other libraries
 import sys
 from math import sqrt
 from threading import Thread
@@ -13,7 +14,6 @@ import cv2
 import numpy as np
 
 # Global Variables
-VideoCapture = cv2.VideoCapture(0)
 circles = (0,0,0)
 
 COLOR_RANGE={
@@ -35,8 +35,13 @@ DISPLAY_COLOR={
 
 
 class Tracker(Thread):
-  def __init__(self, color, flag):
+  def __init__(self, color, flag = False):
     Thread.__init__(self)
+
+    # ROS publisher and subscriber setup
+    self.cv_image_sub = rospy.Subscriber('/ardrone/image_cv', Image, self.ProcessImage)
+    self.cv_image_pub = rospy.Publisher('/ardrone/image_tracker', Image)
+
     self.color=color
     self.display=DISPLAY_COLOR[color]
     self.path=np.zeros((480,640,3), dtype=np.uint8)
@@ -48,21 +53,19 @@ class Tracker(Thread):
     if self.flag:
       cv2.namedWindow(self.color,1)
 
-    self.pubLand = rospy.Publisher('/ardrone/land', msgEmpty)
-
-  def poll(self, img):
+  def ProcessImage(self, img):
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     thresh = cv2.inRange(hsv_img, self.h_min, self.h_max)
     thresh = cv2.GaussianBlur(thresh, (13,13), 0)
     thresh = cv2.GaussianBlur(thresh, (13,13), 0)
     circles = cv2.HoughCircles((thresh), cv.CV_HOUGH_GRADIENT,dp=2,minDist=400,minRadius=15, maxRadius=200)
-    cv2.imshow(self.color, thresh)
-    cv2.imshow("HSV", hsv_img)
+    # cv2.imshow(self.color, thresh)
+    # cv2.imshow("HSV", hsv_img)
     #print circles
     self.draw(thresh, circles)
 
-  def draw(self,thresh, circles):
-    # Drawing Things
+  def Draw(self,thresh, circles):
+    # Drawing Circle 
     maxRadius = 0
     x = 0
     y = 0
@@ -80,20 +83,20 @@ class Tracker(Thread):
       if found:
         cv2.circle(img, (x,y), 3, self.display, -1, 8, 0)
         cv2.circle(img, (x,y), maxRadius, self.display, 3, 8, 0)
-        self.pubLand.publish(msgEmpty())
+        # publish instead of returning
+        return {'image': img, 'target': (x,y)} 
         #print self.color + " ball found at: (", x, ",", y, ")"
 
     if self.flag:
-            cv2.imshow(self.color, thresh)
+      cv2.imshow(self.color, thresh)
+      # cv2.imshow("result", img)
 
-    cv2.imshow("result", img)
     if cv2.waitKey(1) >= 0:
       return
 
 if __name__ == '__main__':
-  print "Starting MultipleColorTracker:"
+  print "Starting Drone Tracker:"
 
-  cv2.namedWindow("Result", 0)
   if VideoCapture:
     frame_copy = None
   # yellow = Tracker("yellow", True)
@@ -107,7 +110,7 @@ if __name__ == '__main__':
   purple.start()
 
   # Firstly we setup a ros node, so that we can communicate with the other packages
-  rospy.init_node('ardrone_vision_controller')
+  rospy.init_node('drone_tracker')
 
   while not rospy.is_shutdown():
     try:

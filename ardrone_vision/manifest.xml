@@ -1,18 +1,19 @@
 <package>
   <description brief="ardrone_vision">
 
-     ardrone_vision
+     Vision processing package for AR.Drone
 
   </description>
   <author>Arjun Aletty</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/ardrone_vision</url>
+  <url>https://github.com/aletty/Olin_AR_Drone</url>
   <depend package="rospy"/>
   <depend package="ardrone_autonomy"/>
-  <depend package="std_msgs"/>
-  <depend package="std_srvs"/>
   <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="sensor_msgs"/>
+  <depend package="std_msgs"/>
 
 </package>
 

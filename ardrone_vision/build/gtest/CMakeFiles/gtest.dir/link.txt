@@ -1,1 +1,0 @@
-/usr/bin/c++  -fPIC -O2 -g   -shared -Wl,-soname,libgtest.so -o /home/arjun/ros/sandbox/Olin_AR_Drone/ardrone_vision/lib/libgtest.so CMakeFiles/gtest.dir/src/gtest-all.cc.o -L/home/arjun/ros/sandbox/Olin_AR_Drone/ardrone_vision/build/gtest/src -lpthread -Wl,-rpath,/home/arjun/ros/sandbox/Olin_AR_Drone/ardrone_vision/build/gtest/src 
