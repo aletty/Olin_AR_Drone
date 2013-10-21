@@ -17,9 +17,9 @@ from sensor_msgs.msg import Joy
 from PySide import QtCore, QtGui
 
 class JoystickController(object):
-  def __init__(self, topicName='/joy'):
+  def __init__(self, droneController,topicName='/joy'):
     self.topicName = topicName
-    
+    self.droneController = droneController
     self.buttons = {
       "ButtonEmergency": 8,
       "ButtonLand": 1,
@@ -35,61 +35,74 @@ class JoystickController(object):
       "AxisZ": 4
     }
 
-    self.subJoyData = rospy.Subscriber(self.topic_name, Joy, self.ReceiveJoy)
-    self.debounce = False
+    self.scale = {
+      "ScaleRoll": 1.0,
+      "ScalePitch": 1.0,
+      "ScaleYaw": 1.0,
+      "ScaleZ": 1.0
+    }
+
+    self.subJoyData = rospy.Subscriber(self.topicName, Joy, self.ReceiveJoy)
+    self.unblock = False
     
 
   def ReceiveJoy(self, data):
-    if self.debounce:
-      pass
-    else:
-      self.debounce = any(button != 0 for button in data.buttons)
+    if not any(button != 0 for button in data.buttons):
+      self.ProcessJoy(data)
+    elif not self.unblock:
+      self.unblock = any(button != 0 for button in data.buttons)
       self.ProcessJoy(data)
 
   def ProcessJoy(self, data):
     if data.buttons[self.buttons['ButtonEmergency']]==1:
       rospy.loginfo("Emergency Button Pressed")
-      controller.SendEmergency()
-    elif data.buttons[ButtonLand]==1:
+      self.droneController.SendEmergency()
+      self.UnblockButton()
+
+    elif data.buttons[self.buttons['ButtonLand']]==1:
       rospy.loginfo("Land Button Pressed")
-      controller.SendLand()
-    elif data.buttons[ButtonTakeoff]==1:
+      self.droneController.SendLand()
+      self.UnblockButton()
+    
+    elif data.buttons[self.buttons['ButtonTakeoff']]==1:
       rospy.loginfo("Takeoff Button Pressed")
-      controller.SendTakeoff()
-    elif data.buttons[ButtonFlattrim]==1:
+      self.droneController.SendTakeoff()
+      self.UnblockButton()
+    
+    elif data.buttons[self.buttons['ButtonFlattrim']]==1:
       rospy.loginfo("Flattrim Button Pressed")
-      controller.CallFlattrim()
-    elif data.buttons[ButtonHover]==1:
+      self.droneController.CallFlattrim()
+      self.UnblockButton()
+    
+    elif data.buttons[self.buttons['ButtonHover']]==1:
+      rospy.loginfo("Hover Button Pressed")
+      self.droneController.SendHover()
+      self.UnblockButton()
+    
+    else:
+      self.droneController.SetCommand(data.axes[self.axes['AxisRoll']]/self.scale['ScaleRoll'],data.axes[self.axes['AxisPitch']]/self.scale['ScalePitch'],data.axes[self.axes['AxisYaw']]/self.scale['ScaleYaw'],data.axes[self.axes['AxisZ']]/self.scale['ScaleZ'])
+    
+  def UnblockButton(self):
+    self.unblock = False
 
-
-class Joystick(object):
-    def __init__(self, topic_name='/joy'):
-        self.topic_name = topic_name
-        self.buttons_names = {'l1':10, 'l2':8}
-        self.sub = rospy.Subscriber(topic_name, Joy, self.cb)
-        self.blocked = False
-        self.sched = sched.scheduler(time.time, time.sleep)
-        print '>>> press L1 button'
-
-    def cb(self, data):
-        print '>> in callback:', data.buttons[self.buttons_names['l1']], data.buttons[self.buttons_names['l2']]
-        if not self.blocked:
-            self.foo(data)
-
-    def foo(self, data):
-        print '>> in foo:', data.buttons[self.buttons_names['l1']], data.buttons[self.buttons_names['l2']]
-        if data.buttons[self.buttons_names['l1']]:
-            self.blocked = True
-            rospy.loginfo('%d', data.buttons[self.buttons_names['l1']])
-            rospy.loginfo('L1 pressed')
-            self.sched.enter(1, 1, self.bar, ())
-        self.sched.run()
-
-    def bar(self):
-        rospy.loginfo('resuming control')
-        self.blocked = False
-
+# Setup the application
 if __name__=='__main__':
-    rospy.init_node('foo', anonymous=False)
-    joy = Joystick()
-    rospy.spin()
+  import sys
+  # Firstly we setup a ros node, so that we can communicate with the other packages
+  rospy.init_node('ardrone__new_joystick_controller')
+
+  # Now we construct our Qt Application and associated controllers and windows
+  app = QtGui.QApplication(sys.argv)
+  display = DroneVideoDisplay()
+
+  controller = BasicDroneController()
+
+  joy = JoystickController(controller)
+
+  # executes the QT application
+  display.show()
+  status = app.exec_()
+
+  # and only progresses to here once the application has been shutdown
+  rospy.signal_shutdown('Great Flying!')
+  sys.exit(status)
