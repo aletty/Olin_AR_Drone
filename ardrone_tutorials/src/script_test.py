@@ -42,18 +42,27 @@ button_last_state = 0
 
 def RunScript():
   rospy.loginfo("Starting Script")
-  controller.Flattrim()
+  controller.CallFlattrim()
   rospy.sleep(5.)
   rospy.loginfo("Takeing Off")
   controller.SendTakeoff()
+  rospy.loginfo("Hovering")
   controller.SendHover()
   rospy.sleep(5.)
+  rospy.loginfo("Forward")
+  controller.SetCommand(pitch=2)
+  rospy.sleep(2.0)
+  rospy.loginfo("Hovering")
+  controller.SendHover()
+  rospy.sleep(0.9)
   controller.SendLand()
   rospy.loginfo("Landed")
 
 
 # handles the reception of joystick packets
 def ReceiveJoystickMessage(data):
+	global button_last_state
+
 	if data.buttons[ButtonEmergency]==1:
 		rospy.loginfo("Emergency Button Pressed")
 		controller.SendEmergency()
@@ -69,9 +78,18 @@ def ReceiveJoystickMessage(data):
 	elif data.buttons[ButtonHover]==1:
 		#rospy.loginfo("Hover Button Pressed")
 		#controller.SendHover()
-		rospy.loginfo("SCRIPT Button Pressed")
-		RunScript()
+		if button_last_state == 0:
+			rospy.loginfo("SCRIPT Button Pressed")
+			RunScript()
+			button_last_state = 1
+		else:
+			rospy.loginfo("SCRIPT Passed")
 	else:
+		if button_last_state == 1:
+			button_last_state = 0
+			rospy.loginfo("SCRIPT Toggle Reset")
+		else:
+			pass
 		controller.SetCommand(data.axes[AxisRoll]/ScaleRoll,data.axes[AxisPitch]/ScalePitch,data.axes[AxisYaw]/ScaleYaw,data.axes[AxisZ]/ScaleZ)
 
 # Setup the application
