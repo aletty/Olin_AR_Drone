@@ -20,10 +20,6 @@
 	<node name="joy_node" pkg="joy" type="joy_node" output="screen" clear_params="true">
 		<param name="dev" type="str" value="/dev/input/js0"/>
 	</node>
-	
-	<!-- Launches ROS to CV image converter -->
-	<node name="image_converter" pkg="ardrone_vision" type="image_converter.py" output="screen" required="true">
-	</node>
 
 	<!-- Launches object tracker -->
 	<node name="object_tracker" pkg="ardrone_vision" type="tracker.py" output="screen" required="true">
