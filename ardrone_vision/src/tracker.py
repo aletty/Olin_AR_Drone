@@ -5,6 +5,8 @@ import roslib; roslib.load_manifest('ardrone_vision')
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
 
 # Other libraries
 import sys
@@ -40,8 +42,11 @@ class Tracker(Thread):
     Thread.__init__(self)
 
     # ROS publisher and subscriber setup
-    self.cv_image_sub = rospy.Subscriber('/ardrone/image_cv', Image, self.ProcessImage)
     self.cv_object_pub = rospy.Publisher('/ardrone/object_tracker', Point)
+
+    # ROS CV conversion sub
+    self.bridge = CvBridge()
+    self.image_sub = rospy.Subscriber('/ardrone/image_raw',Image,self.ConvertImage)
 
     self.color=color
     self.display=DISPLAY_COLOR[color]
@@ -56,6 +61,13 @@ class Tracker(Thread):
 
     if self.flag:
       cv2.namedWindow(self.color,1)
+
+  def ConvertImage(self, data):
+    try:
+      cv_image = self.bridge.imgmsg_to_cv(data, "passthrough")
+      self.ProcessImage(cv_image)
+    except CvBridgeError, e:
+      print e    
 
   def ProcessImage(self, img):
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -94,7 +106,7 @@ class Tracker(Thread):
 
     if self.flag:
       cv2.imshow(self.color, thresh)
-      # cv2.imshow("result", img)
+      cv2.imshow("result", img)
 
     if cv2.waitKey(1) >= 0:
       return

@@ -94,8 +94,6 @@ class Tracker(Thread):
 
 if __name__ == '__main__':
   print "Starting MultipleColorTracker:"
-
-  cv2.namedWindow("Result", 0)
   if VideoCapture:
     frame_copy = None
   # yellow = Tracker("yellow", True)
