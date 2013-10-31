@@ -45,6 +45,9 @@ class Tracker(Thread):
     self.h_min=COLOR_RANGE[color][0]
     self.h_max=COLOR_RANGE[color][1]
     self.flag=flag
+
+    self.pubLand = rospy.Publisher('/ardrone/land',msgEmpty)
+
     if self.flag:
       cv2.namedWindow(self.color,1)
 
@@ -78,14 +81,14 @@ class Tracker(Thread):
       if found:
         cv2.circle(img, (x,y), 3, self.display, -1, 8, 0)
         cv2.circle(img, (x,y), maxRadius, self.display, 3, 8, 0)
-        return {'image': img, 'target': (x,y)}
-        # self.pubLand.publish(msgEmpty())
+        # return {'image': img, 'target': (x,y)}
+        self.pubLand.publish(msgEmpty())
         #print self.color + " ball found at: (", x, ",", y, ")"
 
     if self.flag:
       cv2.imshow(self.color, thresh)
 
-    # cv2.imshow("result", img)
+    cv2.imshow("result", img)
     if cv2.waitKey(1) >= 0:
       return
 
@@ -127,4 +130,5 @@ if __name__ == '__main__':
       if cv2.waitKey(5) != -1:
         break
     except KeyboardInterrupt, SystemExit:
+      VideoCapture.release()
       break

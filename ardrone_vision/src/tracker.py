@@ -4,6 +4,7 @@
 import roslib; roslib.load_manifest('ardrone_vision')
 import rospy
 from sensor_msgs.msg import Image
+from geometry_msgs.msg import Point
 
 # Other libraries
 import sys
@@ -40,7 +41,7 @@ class Tracker(Thread):
 
     # ROS publisher and subscriber setup
     self.cv_image_sub = rospy.Subscriber('/ardrone/image_cv', Image, self.ProcessImage)
-    self.cv_image_pub = rospy.Publisher('/ardrone/image_tracker', Image)
+    self.cv_object_pub = rospy.Publisher('/ardrone/object_tracker', Point)
 
     self.color=color
     self.display=DISPLAY_COLOR[color]
@@ -50,6 +51,9 @@ class Tracker(Thread):
     self.h_min=COLOR_RANGE[color][0]
     self.h_max=COLOR_RANGE[color][1]
     self.flag=flag
+
+    self.tracked_object = Point()    
+
     if self.flag:
       cv2.namedWindow(self.color,1)
 
@@ -67,8 +71,8 @@ class Tracker(Thread):
   def Draw(self,thresh, circles):
     # Drawing Circle 
     maxRadius = 0
-    x = 0
-    y = 0
+    self.tracked_object.x = None
+    self.tracked_object.y = None
     found = False
 
     if circles is not None:
@@ -77,14 +81,15 @@ class Tracker(Thread):
           found = True
           radius = int(circle[2])
           maxRadius = int(radius)
-          x = int(circle[0])
-          y = int(circle[1])
+          self.tracked_object.x = int(circle[0])
+          self.tracked_object.y = int(circle[1])
 
       if found:
         cv2.circle(img, (x,y), 3, self.display, -1, 8, 0)
         cv2.circle(img, (x,y), maxRadius, self.display, 3, 8, 0)
         # publish instead of returning
-        return {'image': img, 'target': (x,y)} 
+        self.cv_object_pub.publish(self.tracked_object)
+        print("Object position: ", self.tracked_object.x, self.tracked_object.y)
         #print self.color + " ball found at: (", x, ",", y, ")"
 
     if self.flag:
@@ -97,38 +102,13 @@ class Tracker(Thread):
 if __name__ == '__main__':
   print "Starting Drone Tracker:"
 
-  if VideoCapture:
-    frame_copy = None
-  # yellow = Tracker("yellow", True)
-  # green = Tracker("green", True)
-  # blue = Tracker("blue", True)
-  # red = Tracker("red", True)
-  # green.start()
-  # blue.start()
-  # red.start()
   purple = Tracker("purple", True)
   purple.start()
 
   # Firstly we setup a ros node, so that we can communicate with the other packages
-  rospy.init_node('drone_tracker')
+  rospy.init_node('object_tracker')
 
-  while not rospy.is_shutdown():
-    try:
-      success, img = VideoCapture.read() 
-      if success:
-        #print "Grabbed frame:"
-        # blue.poll(img)
-        #green.poll(img)
-        # blue.join()
-        #green.join()
-        # green.poll(img)
-        # green.join()
-        purple.poll(img)
-        purple.join()
-      else:
-        2+2
-        #print "Failed to grab new frame."
-      if cv2.waitKey(5) != -1:
-        break
-    except KeyboardInterrupt, SystemExit:
-      break
+  try:
+    rospy.spin()
+  except KeyboardInterrupt, SystemExit:
+    print "Shutting down Tracker"

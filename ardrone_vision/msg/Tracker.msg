@@ -1,2 +1,1 @@
-sensor_msgs/Image tracker_image
 geometry_msgs/Point object
