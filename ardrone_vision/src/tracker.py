@@ -7,6 +7,8 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+import numpy as np
+from drone_controller import BasicDroneController
 
 # Other libraries
 import sys
@@ -23,7 +25,7 @@ COLOR_RANGE={
 'yellow': ((10, 100, 100), (40, 255, 255)),\
 'red': ((170, 80, 0), (190, 255, 255)),\
 'blue': (( 70 , 31 , 11), ( 120 , 255 , 255)),\
-'purple': (( 170 , 5 , 40), (180 , 255 , 255)),\
+'purple': (( 165 , 5 , 40), (180 , 255 , 255)),\
 'green': (( 40 , 25 , 60), (50 , 150 , 150)),\
 'orange': (( 160 , 100 , 47), (179 , 255 , 255))\
 }
@@ -38,9 +40,10 @@ DISPLAY_COLOR={
 
 
 class Tracker(Thread):
-  def __init__(self, color, flag = False):
+  def __init__(self, color, controller, flag = False):
     Thread.__init__(self)
 
+    self.controller = controller
     # ROS publisher and subscriber setup
     self.cv_object_pub = rospy.Publisher('/ardrone/object_tracker', Point)
 
@@ -64,13 +67,14 @@ class Tracker(Thread):
 
   def ConvertImage(self, data):
     try:
-      cv_image = self.bridge.imgmsg_to_cv(data, "passthrough")
-      self.ProcessImage(cv_image)
+      cv_mat = self.bridge.imgmsg_to_cv(data, "passthrough")
+      self.img = np.asarray(cv_mat[:,:])
+      self.ProcessImage()
     except CvBridgeError, e:
       print e    
 
-  def ProcessImage(self, img):
-    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+  def ProcessImage(self):
+    hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
     thresh = cv2.inRange(hsv_img, self.h_min, self.h_max)
     thresh = cv2.GaussianBlur(thresh, (13,13), 0)
     thresh = cv2.GaussianBlur(thresh, (13,13), 0)
@@ -78,7 +82,7 @@ class Tracker(Thread):
     # cv2.imshow(self.color, thresh)
     # cv2.imshow("HSV", hsv_img)
     #print circles
-    self.draw(thresh, circles)
+    self.Draw(thresh, circles)
 
   def Draw(self,thresh, circles):
     # Drawing Circle 
@@ -97,16 +101,17 @@ class Tracker(Thread):
           self.tracked_object.y = int(circle[1])
 
       if found:
-        cv2.circle(img, (x,y), 3, self.display, -1, 8, 0)
-        cv2.circle(img, (x,y), maxRadius, self.display, 3, 8, 0)
+        cv2.circle(self.img, (self.tracked_object.x,self.tracked_object.y), 3, self.display, -1, 8, 0)
+        cv2.circle(self.img, (self.tracked_object.x,self.tracked_object.y), maxRadius, self.display, 3, 8, 0)
         # publish instead of returning
         self.cv_object_pub.publish(self.tracked_object)
         print("Object position: ", self.tracked_object.x, self.tracked_object.y)
+        self.controller.SendLand()
         #print self.color + " ball found at: (", x, ",", y, ")"
 
     if self.flag:
       cv2.imshow(self.color, thresh)
-      cv2.imshow("result", img)
+      cv2.imshow("result", self.img)
 
     if cv2.waitKey(1) >= 0:
       return
@@ -114,7 +119,8 @@ class Tracker(Thread):
 if __name__ == '__main__':
   print "Starting Drone Tracker:"
 
-  purple = Tracker("purple", True)
+  cont = BasicDroneController()
+  purple = Tracker("purple", cont,True)
   purple.start()
 
   # Firstly we setup a ros node, so that we can communicate with the other packages
