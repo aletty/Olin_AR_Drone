@@ -25,7 +25,7 @@ COLOR_RANGE={
 'yellow': ((10, 100, 100), (40, 255, 255)),\
 'red': ((170, 80, 0), (190, 255, 255)),\
 'blue': (( 70 , 31 , 11), ( 120 , 255 , 255)),\
-'purple': (( 165 , 5 , 40), (180 , 255 , 255)),\
+'purple': (( 100 , 170, 25), (200 , 210, 160)),\
 'green': (( 40 , 25 , 60), (50 , 150 , 150)),\
 'orange': (( 160 , 100 , 47), (179 , 255 , 255))\
 }
@@ -60,14 +60,14 @@ class Tracker(Thread):
     self.h_max=COLOR_RANGE[color][1]
     self.flag=flag
 
-    self.tracked_object = Point()    
+    self.tracked_object = Point()
 
     if self.flag:
       cv2.namedWindow(self.color,1)
 
   def ConvertImage(self, data):
     try:
-      cv_mat = self.bridge.imgmsg_to_cv(data, "passthrough")
+      cv_mat = self.bridge.imgmsg_to_cv(data, "bgr8")
       self.img = np.asarray(cv_mat[:,:])
       self.ProcessImage()
     except CvBridgeError, e:
@@ -76,9 +76,9 @@ class Tracker(Thread):
   def ProcessImage(self):
     hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
     thresh = cv2.inRange(hsv_img, self.h_min, self.h_max)
-    thresh = cv2.GaussianBlur(thresh, (13,13), 0)
-    thresh = cv2.GaussianBlur(thresh, (13,13), 0)
-    circles = cv2.HoughCircles((thresh), cv.CV_HOUGH_GRADIENT,dp=2,minDist=400,minRadius=15, maxRadius=200)
+    # thresh = cv2.GaussianBlur(thresh, (13,13), 0)
+    # thresh = cv2.GaussianBlur(thresh, (13,13), 0)
+    circles = cv2.HoughCircles((thresh), cv.CV_HOUGH_GRADIENT,dp=2,minDist=200,minRadius=20, maxRadius=200)
     # cv2.imshow(self.color, thresh)
     # cv2.imshow("HSV", hsv_img)
     #print circles
@@ -105,6 +105,7 @@ class Tracker(Thread):
         cv2.circle(self.img, (self.tracked_object.x,self.tracked_object.y), maxRadius, self.display, 3, 8, 0)
         # publish instead of returning
         self.cv_object_pub.publish(self.tracked_object)
+        print("radius: ", radius)
         print("Object position: ", self.tracked_object.x, self.tracked_object.y)
         self.controller.SendLand()
         #print self.color + " ball found at: (", x, ",", y, ")"
