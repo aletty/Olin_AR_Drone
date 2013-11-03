@@ -15,6 +15,7 @@ from drone_video_display import DroneVideoDisplay
 
 # Import the joystick message
 from sensor_msgs.msg import Joy
+from ardrone_autonomy.msg import Navdata # for receiving navdata feedback
 
 # Finally the GUI libraries
 from PySide import QtCore, QtGui
@@ -39,24 +40,51 @@ ScaleYaw        = 1.0
 ScaleZ          = 1.0
 
 button_last_state = 0
+az_acc = 0
+
 
 def RunScript():
+
   rospy.loginfo("Starting Script")
   controller.CallFlattrim()
-  rospy.sleep(5.)
+  rospy.sleep(1.0)
   rospy.loginfo("Takeing Off")
   controller.SendTakeoff()
   rospy.loginfo("Hovering")
   controller.SendHover()
-  rospy.sleep(5.)
-  rospy.loginfo("Forward")
-  controller.SetCommand(pitch=2)
+  rospy.sleep(6.0)
+  while az_acc > .7:
+  	rospy.loginfo(az_acc)
   rospy.sleep(2.0)
-  rospy.loginfo("Hovering")
+
+  # controller.SetCommand(pitch=3)
+  # rospy.sleep(0.3)
+  # controller.SetCommand(roll=3)
+  # rospy.sleep(0.3)
+  # controller.SetCommand(pitch=-3)
+  # rospy.sleep(0.3)	
+  # controller.SetCommand(roll=-3)
+  # rospy.sleep(0.3)
+
+  # rospy.loginfo("Forward")
+  # controller.SetCommand(pitch=2)
+  # rospy.sleep(1.0)
+  # rospy.loginfo("Hovering")
+  # controller.SendHover()
+  # rospy.sleep(1.0)
+  # rospy.loginfo("Back")
+  # controller.SetCommand(pitch=-2)
+  # rospy.sleep(1.0)
+  # rospy.loginfo("Hovering")
+
   controller.SendHover()
-  rospy.sleep(0.9)
+  rospy.sleep(1.0)
   controller.SendLand()
   rospy.loginfo("Landed")
+
+def ReceiveNavdata(navinfo):
+	global az_acc
+	az_acc = navinfo.az
 
 
 # handles the reception of joystick packets
@@ -121,6 +149,7 @@ if __name__=='__main__':
 
 	# subscribe to the /joy topic and handle messages of type Joy with the function ReceiveJoystickMessage
 	subJoystick = rospy.Subscriber('/joy', Joy, ReceiveJoystickMessage)
+	subNavdata = rospy.Subscriber('/ardrone/navdata', Navdata, ReceiveNavdata) 
 	
 	# executes the QT application
 	display.show()
