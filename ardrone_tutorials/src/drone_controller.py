@@ -78,6 +78,7 @@ class BasicDroneController(object):
 		# Note we send this in all states, landing can do no harm
 		self.SendHover()
 		self.pubLand.publish(msgEmpty())
+		self.SendHover()
 
 	def SendEmergency(self):
 		# Send an emergency (or reset) message to the ardrone driver

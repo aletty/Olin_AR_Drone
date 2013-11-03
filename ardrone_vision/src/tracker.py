@@ -49,7 +49,7 @@ class Tracker(Thread):
 
     # ROS CV conversion sub
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber('/ardrone/image_raw',Image,self.ConvertImage)
+    self.image_sub = rospy.Subscriber('/ardrone/image_raw',Image,self.ConvertImage, queue_size=None)
 
     self.color=color
     self.display=DISPLAY_COLOR[color]
@@ -77,8 +77,8 @@ class Tracker(Thread):
     hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
     thresh = cv2.inRange(hsv_img, self.h_min, self.h_max)
     # thresh = cv2.GaussianBlur(thresh, (13,13), 0)
-    # thresh = cv2.GaussianBlur(thresh, (13,13), 0)
-    circles = cv2.HoughCircles((thresh), cv.CV_HOUGH_GRADIENT,dp=2,minDist=200,minRadius=20, maxRadius=200)
+    thresh = cv2.GaussianBlur(thresh, (13,13), 0)
+    circles = cv2.HoughCircles((thresh), cv.CV_HOUGH_GRADIENT,dp=2,minDist=200,minRadius=10, maxRadius=400)
     # cv2.imshow(self.color, thresh)
     # cv2.imshow("HSV", hsv_img)
     #print circles
@@ -96,19 +96,26 @@ class Tracker(Thread):
         if circle[2] > maxRadius:
           found = True
           radius = int(circle[2])
-          maxRadius = int(radius)
+          # maxRadius = int(radius)
           self.tracked_object.x = int(circle[0])
           self.tracked_object.y = int(circle[1])
 
       if found:
         cv2.circle(self.img, (self.tracked_object.x,self.tracked_object.y), 3, self.display, -1, 8, 0)
         cv2.circle(self.img, (self.tracked_object.x,self.tracked_object.y), maxRadius, self.display, 3, 8, 0)
+
         # publish instead of returning
         self.cv_object_pub.publish(self.tracked_object)
         print("radius: ", radius)
         print("Object position: ", self.tracked_object.x, self.tracked_object.y)
+        
+        # action to the drone
+        self.controller.SendHover()
+        rospy.sleep(0.1)
+        self.controller.SetCommand(z_velocity = -0.5)
+        rospy.sleep(0.5)
         self.controller.SendLand()
-        #print self.color + " ball found at: (", x, ",", y, ")"
+
 
     if self.flag:
       cv2.imshow(self.color, thresh)

@@ -1,0 +1,9 @@
+1) roslaunch ardrone_vision drone_vision.launch
+2) close the ardrone_vision window (one with battery %)
+
+Extra:
+Modify purple HSV colors in tracker.py
+  Ranges:
+  - H: 0-180
+  - S: 0-360
+  - V: 0-360
