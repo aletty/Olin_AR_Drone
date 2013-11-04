@@ -25,6 +25,7 @@ ButtonLand      = 1
 ButtonTakeoff   = 0
 ButtonFlattrim  = 7
 ButtonHover     = 2
+ButtonCamera    = 3
 
 # define the default mapping between joystick axes and their corresponding directions
 AxisRoll        = 0
@@ -55,6 +56,9 @@ def ReceiveJoystickMessage(data):
 	elif data.buttons[ButtonHover]==1:
 		rospy.loginfo("Hover Button Pressed")
 		controller.SendHover()
+	elif data.buttons[ButtonCamera]==1:
+		rospy.loginfo("Toggle Camera Button Pressed")
+		controller.ToggleCam()
 	else:
 		controller.SetCommand(data.axes[AxisRoll]/ScaleRoll,data.axes[AxisPitch]/ScalePitch,data.axes[AxisYaw]/ScaleYaw,data.axes[AxisZ]/ScaleZ)
 

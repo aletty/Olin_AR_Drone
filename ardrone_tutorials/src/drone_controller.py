@@ -56,6 +56,14 @@ class BasicDroneController(object):
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 
+	def ToggleCam(self):
+		rospy.wait_for_service(self.ns + '/ardrone/togglecam')
+		try:
+			self.camera = rospy.ServiceProxy(self.ns + '/ardrone/togglecam', srvEmpty)
+			self.camera()
+		except rospy.ServiceException, e:
+			print "Service call failed: %s" % e
+
 	def ReceiveNavdata(self,navdata):
 		# Although there is a lot of data in this packet, we're only interested in the state at the moment	
 		self.status = navdata.state
