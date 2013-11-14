@@ -55,7 +55,8 @@ def RunScript():
   rospy.sleep(6.0)
   while az_acc > .7:
   	rospy.loginfo(az_acc)
-  rospy.sleep(2.0)
+	controller.SetCommand(yaw_velocity=10)
+  rospy.sleep(.25)
 
   # controller.SetCommand(pitch=3)
   # rospy.sleep(0.3)
