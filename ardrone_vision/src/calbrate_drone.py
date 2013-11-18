@@ -76,8 +76,8 @@ class Tracker(Thread):
 
   def Draw(self,corners, gray_img):
     self.imgpts = np.int32(self.imgpts).reshape(-1,2)
-    gray_img = cv2.drawContours(gray_img, [self.imgpts[:4]], -1, (0,255,0), 3)
-    print "Gray image type: ", type(gray_img)
+    cv2.drawContours(gray_img, [self.imgpts[:4]], -1, (0,255,0), 3)
+    return gray_img
     # publish instead of returning
     # self.cv_object_pub.publish(self.tracked_object)
 
