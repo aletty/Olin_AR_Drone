@@ -1,3 +1,5 @@
 test/
 ardrone_vision/build/
 ardrone_vision/bin/
+ardrone_vision/img/
+ardrone_vision/cascade

@@ -10,7 +10,6 @@
   <url>https://github.com/aletty/Olin_AR_Drone</url>
   <depend package="rospy"/>
   <depend package="ardrone_autonomy"/>
-  <depend package="opencv2"/>
   <depend package="cv_bridge"/>
   <depend package="sensor_msgs"/>
   <depend package="std_msgs"/>

@@ -22,7 +22,7 @@
 	</node>
 
 	<!-- Launches object tracker -->
-	<node name="object_tracker" pkg="ardrone_vision" type="tracker.py" output="screen" required="true">
+	<node name="object_tracker" pkg="ardrone_vision" type="calbrate_drone.py" output="screen" required="true">
 	</node>
 
 	<!-- Launches the joystick controller -->
